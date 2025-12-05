@@ -19,7 +19,8 @@ type URL struct {
 
 // ShortenRequest represents the request to create a short URL
 type ShortenRequest struct {
-	URL string `json:"url" binding:"required"`
+	URL   string `json:"url" binding:"required"`
+	Alias string `json:"alias"`
 }
 
 // ShortenResponse represents the response after creating a short URL

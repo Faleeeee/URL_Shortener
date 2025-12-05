@@ -34,7 +34,7 @@ func (h *URLHandler) ShortenURL(c *gin.Context) {
 	}
 
 	// Create shortened URL
-	url, err := h.service.ShortenURL(req.URL)
+	url, err := h.service.ShortenURL(req.URL, req.Alias)
 	if err != nil {
 		// Check for specific errors
 		if errors.Is(err, domain.ErrInvalidURL) ||

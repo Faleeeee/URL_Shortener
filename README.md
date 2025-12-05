@@ -743,7 +743,3 @@ Built as a technical assignment showcasing:
 - PostgreSQL 16
 - Swagger/OpenAPI
 - Docker & Docker Compose
-
----
-
-**Made with ❤️ for the interview assignment**

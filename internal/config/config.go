@@ -17,7 +17,7 @@ type Config struct {
 
 func LoadConfig() *Config {
 	viper.SetConfigName("dev")
-	viper.SetConfigType("yaml")
+	// viper.SetConfigType("yaml")
 	viper.AddConfigPath("configs")
 
 	if err := viper.ReadInConfig(); err != nil {
