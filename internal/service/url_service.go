@@ -17,10 +17,11 @@ var (
 
 // URLService defines the interface for URL shortening business logic
 type URLService interface {
-	ShortenURL(originalURL string, alias string) (*domain.URL, error)
+	ShortenURL(originalURL string, alias string, userID int64) (*domain.URL, error)
 	GetURLByAlias(alias string) (*domain.URL, error)
 	IncrementClickCount(alias string) error
 	ListURLs(limit, offset int) ([]*domain.URL, error)
+	GetURLsByUserID(userID int64, limit, offset int) ([]*domain.URL, error)
 }
 
 type urlService struct {
@@ -37,7 +38,7 @@ func NewURLService(repo repository.URLRepository, baseURL string) URLService {
 }
 
 // ShortenURL creates a shortened URL with automatic collision handling
-func (s *urlService) ShortenURL(originalURL string, alias string) (*domain.URL, error) {
+func (s *urlService) ShortenURL(originalURL string, alias string, userID int64) (*domain.URL, error) {
 	// Validate original URL
 	if err := domain.ValidateURL(originalURL); err != nil {
 		return nil, err
@@ -45,6 +46,7 @@ func (s *urlService) ShortenURL(originalURL string, alias string) (*domain.URL, 
 
 	url := &domain.URL{
 		OriginalURL: originalURL,
+		UserID:      userID,
 		ClickCount:  0,
 	}
 
@@ -113,4 +115,19 @@ func (s *urlService) ListURLs(limit, offset int) ([]*domain.URL, error) {
 	}
 
 	return s.repo.FindAll(limit, offset)
+}
+
+// GetURLsByUserID retrieves all URLs created by a specific user with pagination
+func (s *urlService) GetURLsByUserID(userID int64, limit, offset int) ([]*domain.URL, error) {
+	// Set default limit if not specified
+	if limit <= 0 {
+		limit = 50
+	}
+
+	// Prevent excessive limit
+	if limit > 100 {
+		limit = 100
+	}
+
+	return s.repo.FindByUserID(userID, limit, offset)
 }

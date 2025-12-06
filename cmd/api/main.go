@@ -1,3 +1,12 @@
+// @title URL Shortener Service API
+// @version 1.0
+// @description This is a URL shortener service with user authentication
+// @host localhost:8080
+// @BasePath /
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
 package main
 
 import (

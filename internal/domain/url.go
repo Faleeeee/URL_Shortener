@@ -12,6 +12,7 @@ type URL struct {
 	ID          int64     `json:"id"`
 	Alias       string    `json:"alias"`
 	OriginalURL string    `json:"original_url"`
+	UserID      int64     `json:"user_id"`
 	ClickCount  int64     `json:"click_count"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
@@ -34,6 +35,7 @@ type ShortenResponse struct {
 type URLInfoResponse struct {
 	Alias       string    `json:"alias"`
 	OriginalURL string    `json:"original_url"`
+	UserID      int64     `json:"user_id"`
 	ClickCount  int64     `json:"click_count"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`

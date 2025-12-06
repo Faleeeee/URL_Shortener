@@ -19,6 +19,7 @@ type URLRepository interface {
 	FindByAlias(alias string) (*domain.URL, error)
 	IncrementClickCount(alias string) error
 	FindAll(limit, offset int) ([]*domain.URL, error)
+	FindByUserID(userID int64, limit, offset int) ([]*domain.URL, error)
 	ExistsByAlias(alias string) (bool, error)
 }
 
@@ -34,8 +35,8 @@ func NewURLRepository(db *database.DB) URLRepository {
 // Create inserts a new URL into the database
 func (r *urlRepository) Create(url *domain.URL) error {
 	query := `
-		INSERT INTO urls (alias, original_url, click_count, created_at, updated_at)
-		VALUES ($1, $2, $3, NOW(), NOW())
+		INSERT INTO urls (alias, original_url, create_id, click_count, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, NOW(), NOW())
 		RETURNING id, created_at, updated_at
 	`
 
@@ -43,6 +44,7 @@ func (r *urlRepository) Create(url *domain.URL) error {
 		query,
 		url.Alias,
 		url.OriginalURL,
+		url.UserID,
 		url.ClickCount,
 	).Scan(&url.ID, &url.CreatedAt, &url.UpdatedAt)
 
@@ -61,7 +63,7 @@ func (r *urlRepository) Create(url *domain.URL) error {
 // FindByAlias retrieves a URL by its alias
 func (r *urlRepository) FindByAlias(alias string) (*domain.URL, error) {
 	query := `
-		SELECT id, alias, original_url, click_count, created_at, updated_at
+		SELECT id, alias, original_url, create_id, click_count, created_at, updated_at
 		FROM urls
 		WHERE alias = $1
 	`
@@ -71,6 +73,7 @@ func (r *urlRepository) FindByAlias(alias string) (*domain.URL, error) {
 		&url.ID,
 		&url.Alias,
 		&url.OriginalURL,
+		&url.UserID,
 		&url.ClickCount,
 		&url.CreatedAt,
 		&url.UpdatedAt,
@@ -115,7 +118,7 @@ func (r *urlRepository) IncrementClickCount(alias string) error {
 // FindAll retrieves all URLs with pagination
 func (r *urlRepository) FindAll(limit, offset int) ([]*domain.URL, error) {
 	query := `
-		SELECT id, alias, original_url, click_count, created_at, updated_at
+		SELECT id, alias, original_url, create_id, click_count, created_at, updated_at
 		FROM urls
 		ORDER BY created_at DESC
 		LIMIT $1 OFFSET $2
@@ -134,6 +137,48 @@ func (r *urlRepository) FindAll(limit, offset int) ([]*domain.URL, error) {
 			&url.ID,
 			&url.Alias,
 			&url.OriginalURL,
+			&url.UserID,
+			&url.ClickCount,
+			&url.CreatedAt,
+			&url.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan URL: %w", err)
+		}
+		urls = append(urls, url)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %w", err)
+	}
+
+	return urls, nil
+}
+
+// FindByUserID retrieves all URLs created by a specific user with pagination
+func (r *urlRepository) FindByUserID(userID int64, limit, offset int) ([]*domain.URL, error) {
+	query := `
+		SELECT id, alias, original_url, create_id, click_count, created_at, updated_at
+		FROM urls
+		WHERE create_id = $1
+		ORDER BY created_at DESC
+		LIMIT $2 OFFSET $3
+	`
+
+	rows, err := r.db.Query(query, userID, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query URLs by user ID: %w", err)
+	}
+	defer rows.Close()
+
+	var urls []*domain.URL
+	for rows.Next() {
+		url := &domain.URL{}
+		err := rows.Scan(
+			&url.ID,
+			&url.Alias,
+			&url.OriginalURL,
+			&url.UserID,
 			&url.ClickCount,
 			&url.CreatedAt,
 			&url.UpdatedAt,

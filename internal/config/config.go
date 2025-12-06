@@ -13,6 +13,10 @@ type Config struct {
 	Database struct {
 		URL string
 	}
+	JWT struct {
+		Secret     string
+		Expiration string
+	}
 }
 
 func LoadConfig() *Config {
