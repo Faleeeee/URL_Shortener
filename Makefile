@@ -1,4 +1,4 @@
-.PHONY: help build run test migrate-up migrate-down docker-up docker-down clean swagger
+.PHONY: help build run test migrate-up migrate-down clean swagger
 
 help: ## Show this help message
 	@echo 'Usage: make [target]'
@@ -32,28 +32,15 @@ swagger: ## Generate Swagger documentation
 
 migrate-up: ## Run database migrations up
 	@echo "Running migrations..."
-	@docker exec -it url_shortener_db psql -U postgres -d url_shortener -f /migrations/000001_create_urls_table.up.sql
+	@psql -U postgres -d url_shortener -f migrations/000001_create_urls_table.up.sql
 	@echo "Migrations complete"
 
 migrate-down: ## Rollback database migrations
 	@echo "Rolling back migrations..."
-	@docker exec -it url_shortener_db psql -U postgres -d url_shortener -f /migrations/000001_create_urls_table.down.sql
+	@psql -U postgres -d url_shortener -f migrations/000001_create_urls_table.down.sql
 	@echo "Rollback complete"
 
-docker-up: ## Start Docker containers
-	@echo "Starting Docker containers..."
-	@docker-compose up -d
-	@echo "Waiting for database to be ready..."
-	@sleep 5
-	@echo "Docker containers started"
 
-docker-down: ## Stop Docker containers
-	@echo "Stopping Docker containers..."
-	@docker-compose down
-	@echo "Docker containers stopped"
-
-docker-logs: ## Show Docker container logs
-	@docker-compose logs -f
 
 clean: ## Clean build artifacts
 	@echo "Cleaning..."
@@ -61,6 +48,6 @@ clean: ## Clean build artifacts
 	@rm -f coverage.out coverage.html
 	@echo "Clean complete"
 
-dev: docker-up swagger run ## Start development environment (Docker + Swagger + Run)
+dev: swagger run ## Start development environment (Swagger + Run)
 
 .DEFAULT_GOAL := help

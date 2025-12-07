@@ -10,6 +10,7 @@ import (
 	"github.com/Faleeeee/URL_Shortener/internal/service"
 	"github.com/Faleeeee/URL_Shortener/internal/utils"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -17,6 +18,13 @@ import (
 
 func NewRouter(db *database.DB, baseURL, jwtSecret string, jwtExpiration time.Duration, base62Chars string) *gin.Engine {
 	r := gin.Default()
+
+	// CORS for Swagger
+	config := cors.DefaultConfig()
+	config.AllowAllOrigins = true
+	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}
+	config.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization"}
+	r.Use(cors.New(config))
 
 	// Initialize JWT Manager
 	jwtManager := utils.NewJWTManager(jwtSecret, jwtExpiration)

@@ -1,748 +1,430 @@
-# URL Shortener Service
-
-A production-ready URL shortening service built with Go, similar to bit.ly or TinyURL. This service converts long URLs into short, shareable links with click tracking and comprehensive API support.
-
 [![Go Version](https://img.shields.io/badge/Go-1.23-blue)](https://golang.org/)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 ---
 
-## 📋 Table of Contents
+## 📋 Mục lục
 
-- [Problem Description](#problem-description)
-- [Features](#features)
-- [Quick Start](#quick-start)
-- [API Documentation](#api-documentation)
-- [Architecture & Design Decisions](#architecture--design-decisions)
-- [Technical Trade-offs](#technical-trade-offs)
-- [Challenges & Solutions](#challenges--solutions)
-- [Testing](#testing)
-- [Limitations & Future Improvements](#limitations--future-improvements)
-- [Production Readiness](#production-readiness)
+- [Mô tả Bài toán](#mô-tả-bài-toán)
+- [Tính năng](#tính-năng)
+- [Bắt đầu Nhanh](#bắt-đầu-nhanh)
+- [Tài liệu API](#tài-liệu-api)
+- [Kiến trúc & Quyết định Thiết kế](#kiến-trúc--quyết-định-thiết-kế)
+- [Đánh đổi Kỹ thuật](#đánh-đổi-kỹ-thuật)
+- [Thách thức & Giải pháp](#thách-thức--giải-pháp)
+- [Kiểm thử](#kiểm-thử)
+- [Hạn chế & Cải tiến Tương lai](#hạn-chế--cải-tiến-tương-lai)
+- [Sẵn sàng cho Production](#sẵn-sàng-cho-production)
 
 ---
 
-## 🎯 Problem Description
+## 🎯 Mô tả Bài toán
 
-### The Challenge
+Bài toán yêu cầu xây dựng một URL Shortener Service giống như Bit.ly:
 
-Users have long URLs like:
-```
+User có một URL dài:
 https://example.com/very/long/path/to/resource?param1=value1&param2=value2
-```
 
-And want to shorten them to:
-```
+Muốn rút gọn thành URL ngắn hơn:
 http://short.url/abc123
-```
 
-### Requirements
+Khi người dùng truy cập URL rút gọn → server tự động redirect về URL gốc
 
-1. **Create Short URLs**: Convert any long URL into a compact, shareable link
-2. **Redirect**: Automatically redirect users from short URL to original URL
-3. **Analytics**: Track click counts for each shortened URL
-4. **Management**: List and retrieve information about created URLs
-5. **Custom Aliases**: Optionally allow users to specify custom short codes
+Hệ thống theo dõi được số lượt click
+
+API hỗ trợ:
+
+Tạo URL rút gọn
+
+Redirect
+
+Xem thông tin URL
+
+Liệt kê các URL đã tạo
+---
+
+## ✨ Tính năng
+
+### Chức năng Cốt lõi
+- ✅ **Rút gọn URL**: Tạo các alias ngẫu nhiên gồm 6 ký tự
+- ✅ **Xác thực Người dùng**: Đăng ký và đăng nhập bảo mật dựa trên JWT
+- ✅ **Alias Tùy chỉnh**: Hỗ trợ mã rút gọn do người dùng định nghĩa
+- ✅ **Chuyển hướng Nhanh**: Chuyển hướng 302 với việc theo dõi click bất đồng bộ (async)
+- ✅ **Phân tích Click**: Tăng bộ đếm thời gian thực
+- ✅ **Phân trang**: Liệt kê hiệu quả tất cả các URL (Chỉ dành cho Admin)
+
+### Bảo mật & Xác thực
+- ✅ **Xác thực URL**: Kiểm tra định dạng bằng regex
+- ✅ **Chặn URL Riêng tư**: Ngăn chặn localhost và các địa chỉ IP riêng
+- ✅ **Làm sạch Đầu vào**: Chỉ chấp nhận alias là chữ và số
+- ✅ **Xử lý Va chạm**: Tự động thử lại với mã mới
+
+### Hiệu năng
+- ✅ **Chỉ mục Cơ sở dữ liệu**: Chỉ mục duy nhất (unique index) trên alias để tra cứu O(1)
+- ✅ **Connection Pooling**: Cấu hình tối đa 25 kết nối
+- ✅ **Thao tác Nguyên tử (Atomic)**: Đếm click không bị race condition
 
 ---
 
-## ✨ Features
+## Cách chạy project:
 
-### Core Functionality
-- ✅ **URL Shortening**: Generate short, random 6-character aliases
-- ✅ **Custom Aliases**: Support for user-defined short codes
-- ✅ **Fast Redirects**: 302 redirects with async click tracking
-- ✅ **Click Analytics**: Real-time counter increments
-- ✅ **Pagination**: Efficient listing of all URLs
-
-### Security & Validation
-- ✅ **URL Validation**: Format checking with regex
-- ✅ **Private URL Blocking**: Prevents localhost and private IP addresses
-- ✅ **Input Sanitization**: Alphanumeric-only aliases
-- ✅ **Collision Handling**: Automatic retry with new codes
-
-### Performance
-- ✅ **Database Indexes**: Unique index on alias for O(1) lookups
-- ✅ **Connection Pooling**: Configured for 25 max connections
-- ✅ **Atomic Operations**: Race-condition-free click counting
-
----
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- **Go 1.23+**: [Install Go](https://golang.org/doc/install)
-- **Docker & Docker Compose**: [Install Docker](https://docs.docker.com/get-docker/)
-- **PostgreSQL** (or use Docker Compose)
-
-### 1. Clone the Repository
+### 1. Clone Repository
 
 ```bash
-git clone <your-repo-url>
-cd URL-Shortener-Service
+git clone https://github.com/Faleeeee/URL_Shortener.git
+cd URL_Shortener
 ```
 
-### 2. Configure Environment Variables
+### 2. Cấu hình Biến Môi trường
 
 ```bash
-# Copy the example environment file
+# Sao chép file môi trường mẫu
 cp .env.example .env
 
-# Edit .env with your database credentials if needed
-# The default values work with the Docker Compose setup
+# Chỉnh sửa .env với thông tin database của bạn
+# Đảm bảo DATABASE_URL trỏ đến database PostgreSQL cục bộ của bạn
 ```
 
-### 3. Start the Database
+### 3. Tạo Database
+
+Đảm bảo PostgreSQL đang chạy và tạo database:
 
 ```bash
-# Using Docker Compose
-sudo docker compose up -d
-
-# Wait for database to be ready (5 seconds)
-sleep 5
+createdb -U postgres url_shortener
 ```
 
-### 4. Run Database Migrations
+### 4. Chạy Database Migrations
 
 ```bash
-sudo docker exec url_shortener_db psql -U postgres -d url_shortener -f /migrations/000001_create_urls_table.up.sql
+```bash
+psql -U postgres -d url_shortener -f migrations/000001_create_urls_table.up.sql
 ```
 
-### 5. Install Dependencies
+### 5. Cài đặt Dependencies
 
 ```bash
 go mod download
 ```
 
-### 6. Run the Service
+### 6. Chạy Service
 
 ```bash
 go run cmd/api/main.go
 ```
 
-The service will start on `http://localhost:8080`
+Service sẽ bắt đầu tại `http://localhost:8080`
 
-### 7. Access Swagger Documentation
+### 7. Truy cập Tài liệu Swagger
 
-Open your browser to:
+Mở trình duyệt của bạn tại:
 ```
 http://localhost:8080/swagger/index.html
 ```
 
+### 8. Luồng Xác thực
+
+1. **Đăng ký** người dùng mới:
+   ```bash
+   curl -X POST http://localhost:8080/auth/register \
+     -H "Content-Type: application/json" \
+     -d '{"username": "testuser", "password": "password123"}'
+   ```
+
+2. **Đăng nhập** để lấy token:
+   ```bash
+   curl -X POST http://localhost:8080/auth/login \
+     -H "Content-Type: application/json" \
+     -d '{"username": "testuser", "password": "password123"}'
+   ```
+   Sao chép `token` từ phản hồi.
+
+3. **Sử dụng Token** cho các endpoint được bảo vệ:
+   ```bash
+   curl -X POST http://localhost:8080/url/shorten \
+     -H "Authorization: Bearer <YOUR_TOKEN>" ...
+   ```
+
 ---
 
-## ⚙️ Configuration
+## ⚙️ Cấu hình
 
-The service uses environment variables for configuration. All settings are defined in the `.env` file.
+Dịch vụ sử dụng biến môi trường để cấu hình. Tất cả các cài đặt được định nghĩa trong file `.env`.
 
-### Environment Variables
+### Biến Môi trường
 
-| Variable | Description | Default | Required |
+| Biến | Mô tả | Mặc định | Bắt buộc |
 |----------|-------------|---------|----------|
-| `SERVER_PORT` | Port the server listens on | `8080` | No |
-| `DATABASE_URL` | PostgreSQL connection string | - | Yes |
-| `JWT_SECRET` | Secret key for JWT token signing | - | Yes |
-| `JWT_EXPIRATION` | JWT token expiration duration | `24h` | No |
+| `SERVER_PORT` | Cổng server lắng nghe | `8080` | Không |
+| `DATABASE_URL` | Chuỗi kết nối PostgreSQL | - | Có |
+| `JWT_SECRET` | Khóa bí mật để ký JWT token | - | Có |
+| `JWT_EXPIRATION` | Thời gian hết hạn JWT token | `24h` | Không |
 
-### Example `.env` File
+### Ví dụ file `.env`
 
 ```bash
-# Server Configuration
+# Cấu hình Server
 SERVER_PORT=8080
 
-# Database Configuration
+# Cấu hình Database
 DATABASE_URL=postgres://postgres:123456@localhost:5432/url_shortener?sslmode=disable
 
-# JWT Configuration
+# Cấu hình JWT
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 JWT_EXPIRATION=24h
 ```
 
-### Configuration Loading
-
-The service loads configuration in the following order:
-1. Reads from `.env` file in the project root
-2. Falls back to system environment variables if `.env` not found
-3. Uses default values for optional settings
-4. Fails with clear error message if required variables are missing
-
-> [!IMPORTANT]
-> **Production Security**: Always use strong, randomly generated values for `JWT_SECRET` in production environments.
 
 ---
 
-## 📡 API Documentation
+## 🏗️ Kiến trúc & Quyết định Thiết kế
 
-### Base URL
-```
-http://localhost:8080
-```
+### 1. Lựa chọn Database: **PostgreSQL**
 
-### Endpoints
+#### Tại sao là PostgreSQL?
 
-#### 1. Create Short URL
-
-**POST** `/url/shorten`
-
-Create a shortened URL with optional custom alias.
-
-**Request Body:**
-```json
-{
-  "url": "https://www.example.com/very/long/url",
-  "alias": "my-link"  // Optional custom alias
-}
-```
-
-**Response (200 OK):**
-```json
-{
-  "alias": "my-link",
-  "short_url": "http://localhost:8080/my-link",
-  "original_url": "https://www.example.com/very/long/url"
-}
-```
-
-**Error Responses:**
-- `400 Bad Request`: Invalid URL format, URL too long, or invalid alias
-- `409 Conflict`: Custom alias already exists
-- `500 Internal Server Error`: Failed to create short URL
-
-**cURL Example:**
-```bash
-curl -X POST http://localhost:8080/url/shorten \
-  -H "Content-Type: application/json" \
-  -d '{"url": "https://www.google.com"}'
-```
+✅ **Được chọn vì:**
+- **Tuân thủ ACID**: Đảm bảo tính toàn vẹn dữ liệu cho các yêu cầu đồng thời
+- **Ràng buộc Duy nhất (Unique Constraints)**: Ngăn chặn trùng lặp alias ở cấp database
+- **Thao tác Nguyên tử**: `UPDATE ... SET count = count + 1` ngăn chặn race conditions
+- **Đánh chỉ mục**: Tra cứu nhanh O(1) trên cột alias
+- **Giao dịch (Transactions)**: Hỗ trợ các thao tác nhiều bước
+- **Độ tin cậy**: Đã được kiểm chứng trong môi trường production
 
 ---
 
-#### 2. Redirect to Original URL
+### 2. Tạo Mã Rút gọn: **Base62 + Cryptographic Random**
 
-**GET** `/:alias`
-
-Redirects to the original URL and increments click counter.
-
-**Parameters:**
-- `alias` (path): The short code
-
-**Response:**
-- `302 Found`: Redirects to original URL
-- `404 Not Found`: Short URL not found
-
-**Browser Example:**
-```
-http://localhost:8080/my-link
-```
-
----
-
-#### 3. Get URL Information
-
-**GET** `/url/links/:alias`
-
-Retrieve metadata about a shortened URL.
-
-**Response (200 OK):**
-```json
-{
-  "alias": "my-link",
-  "original_url": "https://www.example.com",
-  "click_count": 42,
-  "created_at": "2025-12-05T15:30:00Z",
-  "updated_at": "2025-12-05T16:45:00Z"
-}
-```
-
-**cURL Example:**
-```bash
-curl http://localhost:8080/url/links/my-link
-```
-
----
-
-#### 4. List All URLs
-
-**GET** `/url/links`
-
-Retrieve a paginated list of all shortened URLs.
-
-**Query Parameters:**
-- `limit` (optional): Items per page (default: 50, max: 100)
-- `offset` (optional): Offset for pagination (default: 0)
-
-**Response (200 OK):**
-```json
-{
-  "urls": [
-    {
-      "id": 1,
-      "alias": "abc123",
-      "original_url": "https://www.google.com",
-      "click_count": 5,
-      "created_at": "2025-12-05T15:30:00Z",
-      "updated_at": "2025-12-05T15:35:00Z"
-    }
-  ],
-  "count": 1,
-  "limit": 50,
-  "offset": 0
-}
-```
-
-**cURL Example:**
-```bash
-curl "http://localhost:8080/url/links?limit=20&offset=0"
-```
-
----
-
-## 🏗️ Architecture & Design Decisions
-
-### 1. Database Choice: **PostgreSQL**
-
-#### Why PostgreSQL?
-
-✅ **Chosen for:**
-- **ACID Compliance**: Ensures data integrity for concurrent requests
-- **Unique Constraints**: Database-level prevention of duplicate aliases
-- **Atomic Operations**: `UPDATE ... SET count = count + 1` prevents race conditions
-- **Indexing**: Fast O(1) lookups on alias column
-- **Transactions**: Support for multi-step operations
-- **Reliability**: Battle-tested in production environments
-
-❌ **Trade-offs vs. NoSQL (MongoDB, Redis, DynamoDB):**
-- **Vertical Scaling Limitation**: PostgreSQL scales vertically (bigger machines) while NoSQL scales horizontally (more machines)
-- **Complexity**: Requires more setup than embedded databases like SQLite
-- **Cost**: More expensive than serverless options for low traffic
-
-#### Mitigation Strategy:
-- Add **read replicas** for horizontal read scaling
-- Implement **Redis caching** for hot URLs (80/20 rule)
-- Use **connection pooling** to maximize throughput
-- Consider **database sharding** for extreme scale (100M+ URLs)
-
----
-
-### 2. Short Code Generation: **Base62 + Cryptographic Random**
-
-#### Algorithm
+#### Thuật toán
 
 ```go
-Characters: [0-9A-Za-z] = 62 possibilities
-Length: 6 characters
-Total combinations: 62^6 = 56,800,235,584 (56.8 billion)
+Ký tự: [0-9A-Za-z] = 62 khả năng
+Độ dài: 6 ký tự
+Tổng số tổ hợp: 62^6 = 56,800,235,584 (56.8 tỷ)
 ```
 
-#### Why This Approach?
+#### Tại sao chọn cách tiếp cận này?
 
-✅ **Advantages:**
-- **High Collision Resistance**: 56.8 billion combinations ensure virtually no collisions
-- **Compact**: Only 6 characters (user-friendly)
-- **Unpredictable**: Cryptographic randomness prevents URL guessing
-- **Stateless**: No need for distributed counter synchronization
+✅ **Ưu điểm:**
+- **Kháng va chạm cao**: 56.8 tỷ tổ hợp đảm bảo hầu như không có va chạm
+- **Ngắn gọn**: Chỉ 6 ký tự (thân thiện với người dùng)
+- **Không thể đoán trước**: Tính ngẫu nhiên mật mã ngăn chặn việc đoán URL
+- **Stateless**: Không cần đồng bộ hóa bộ đếm phân tán
 
-❌ **Alternatives Considered:**
+❌ **Các lựa chọn thay thế đã xem xét:**
 
-| Approach | Why Not Chosen |
+| Cách tiếp cận | Tại sao không chọn |
 |----------|----------------|
-| **Auto-increment ID + base62** | Predictable (security risk), exposes URL count |
-| **MD5/SHA hash + truncate** | Collision possible, longer codes (8-10 chars) |
-| **Snowflake ID** | Requires distributed coordination, overkill |
-| **UUID** | Too long (36 chars) for "short" URL |
+| **Auto-increment ID + base62** | Dễ đoán (rủi ro bảo mật), lộ số lượng URL |
+| **MD5/SHA hash + cắt ngắn** | Có thể va chạm, mã dài hơn (8-10 ký tự) |
+| **Snowflake ID** | Yêu cầu phối hợp phân tán, quá mức cần thiết |
+| **UUID** | Quá dài (36 ký tự) cho URL "rút gọn" |
 
-#### Collision Handling
+#### Xử lý Va chạm
 
 ```go
-1. Generate random 6-character base62 code
-2. Attempt INSERT into database
-3. If unique constraint violation → retry (max 3 times)
-4. If still fails → return error (astronomically rare)
+1. Tạo mã base62 ngẫu nhiên 6 ký tự
+2. Thử INSERT vào database
+3. Nếu vi phạm ràng buộc duy nhất → thử lại (tối đa 3 lần)
+4. Nếu vẫn thất bại → trả về lỗi
 ```
 
-**Collision Probability**: With 1 million URLs, probability ≈ 0.001% (negligible)
+**Xác suất Va chạm**: Với 1 triệu URL, xác suất ≈ 0.001% (không đáng kể)
 
 ---
 
-### 3. API Design: **REST**
+### 3. Thiết kế API: **REST**
 
-#### Why REST over GraphQL/gRPC?
+#### Tại sao REST thay vì GraphQL/gRPC?
 
-✅ **REST chosen because:**
-- **Simplicity**: Well-understood by all developers
-- **Perfect fit**: CRUD operations map naturally to HTTP methods
-- **Caching**: Browser and CDN caching works out-of-the-box
-- **Redirects**: Native HTTP 302 redirect support
-- **Tooling**: Swagger/OpenAPI for documentation
-
-❌ **GraphQL**: Overkill for simple CRUD, no redirect support
-❌ **gRPC**: Requires protobuf, no browser support without proxy
+✅ **REST được chọn vì:**
+- **Đơn giản**: Dễ hiểu với mọi lập trình viên
+- **Phù hợp hoàn hảo**: Các thao tác CRUD ánh xạ tự nhiên với các phương thức HTTP
+- **Caching**: Caching của trình duyệt và CDN hoạt động ngay lập tức
+- **Chuyển hướng**: Hỗ trợ chuyển hướng HTTP 302 gốc
+- **Công cụ**: Swagger/OpenAPI cho tài liệu
 
 ---
 
-### 4. Concurrency Strategy
+### 4. Chiến lược Đồng thời (Concurrency)
 
-#### Problem: Race Conditions
+#### Vấn đề: Race Conditions
 
-**Scenario 1**: Two users create URLs simultaneously
-**Solution**: Database unique constraint on `alias` column
+**Kịch bản 1**: Hai người dùng tạo URL cùng lúc
+**Giải pháp**: Ràng buộc duy nhất (unique constraint) của database trên cột `alias`
 
 ```sql
 CREATE UNIQUE INDEX idx_alias ON urls(alias);
 ```
 
-**Scenario 2**: Multiple click events for same URL
-**Solution**: Atomic SQL update
+**Kịch bản 2**: Nhiều sự kiện click cho cùng một URL
+**Giải pháp**: Cập nhật SQL nguyên tử (Atomic SQL update)
 
 ```sql
 UPDATE urls SET click_count = click_count + 1 WHERE alias = ?
 ```
 
-**Scenario 3**: Read-modify-write collision
-**Solution**: Use `QueryRow` + `Exec` with transactions
+**Kịch bản 3**: Va chạm đọc-sửa-ghi (Read-modify-write)
+**Giải pháp**: Sử dụng `QueryRow` + `Exec` với transactions
 
 ---
 
-### 5. Project Structure: **Clean Architecture**
+## Thách thức & Giải pháp
 
-```
-├── cmd/api/              # Application entry point
-├── internal/
-│   ├── domain/          # Business entities & validation
-│   ├── repository/      # Data access layer
-│   ├── service/         # Business logic
-│   ├── handler/         # HTTP handlers (API)
-│   ├── server/          # Server & routing
-│   ├── database/        # Database connection
-│   └── config/          # Configuration loading from env
-├── migrations/          # SQL migrations
-├── docs/               # Swagger documentation
-├── .env.example        # Environment variables template
-└── .env                # Environment variables (gitignored)
-```
+### Thách thức 1: Tạo URL Đồng thời
 
-**Benefits:**
-- **Separation of Concerns**: Each layer has single responsibility
-- **Testability**: Easy to mock dependencies
-- **Maintainability**: Changes isolated to specific layers
-- **Scalability**: Can split into microservices later
+**Vấn đề**: Hai yêu cầu với cùng một URL dài đến cùng lúc
 
----
-
-## ⚖️ Technical Trade-offs
-
-### Trade-off 1: 302 (Temporary) vs 301 (Permanent) Redirect
-
-**Choice**: 302 Temporary Redirect
-
-✅ **Why 302:**
-- Browsers always request server (increments counter accurately)
-- Original URL can be changed if needed
-- Better for analytics and tracking
-
-❌ **Why NOT 301:**
-- Browsers cache permanently (bypasses server)
-- Cannot update original URL
-- Click counter would be inaccurate
-
----
-
-### Trade-off 2: Synchronous vs Asynchronous Click Counting
-
-**Choice**: Asynchronous (fire-and-forget)
-
-```go
-go h.service.IncrementClickCount(alias)
-c.Redirect(http.StatusFound, url.OriginalURL)
-```
-
-✅ **Advantages:**
-- **Fast redirects**: User doesn't wait for counter update
-- **Better UX**: Sub-millisecond response times
-
-❌ **Disadvantages:**
-- **Potential data loss**: If server crashes before update
-- **Eventual consistency**: Counter might lag slightly
-
-**Mitigation**: PostgreSQL write-ahead log ensures durability even if goroutine fails
-
----
-
-### Trade-off 3: Pagination Limit (Max 100)
-
-**Choice**: Hard cap at 100 items per page
-
-✅ **Why:**
-- Prevents abuse (fetching millions of records)
-- Protects database from expensive queries
-- Reduces network payload
-
-❌ **Trade-off:**
-- Users need multiple requests for large datasets
-
-**Alternative**: Could implement cursor-based pagination for better performance
-
----
-
-### Trade-off 4: No Rate Limiting (Yet)
-
-**Decision**: Not implemented in v1
-
-✅ **Why deferred:**
-- Adds complexity (Redis, token bucket algorithm)
-- YAGNI (You Ain't Gonna Need It) for MVP
-- Can add later via middleware
-
-⚠️ **Risk:**
-- Vulnerable to abuse (spam, DDOS)
-
-**Mitigation Plan**:
-- Use reverse proxy (Nginx) with `limit_req`
-- Implement API key system
-- Add Redis-based rate limiter middleware
-
----
-
-## 🔥 Challenges & Solutions
-
-### Challenge 1: Concurrent URL Creation
-
-**Problem**: Two requests with same long URL arrive simultaneously
-
-**Solution**: Retry logic with exponential backoff
+**Giải pháp**: Logic thử lại với exponential backoff
 ```go
 for i := 0; i < MaxRetries; i++ {
     alias := GenerateShortCode()
     if err := repo.Create(alias); err == nil {
         return alias, nil
     }
-    // On duplicate, retry
+    // Nếu trùng lặp, thử lại
 }
 ```
 
-**Alternative considered**: Check if URL exists first → Race condition still possible
+**Thay thế đã xem xét**: Kiểm tra xem URL có tồn tại trước không → Vẫn có thể xảy ra Race condition
+
+**Bài học**: Trong hệ thống phân tán, **Optimistic Locking** (thử lại khi lỗi) thường hiệu quả hơn Pessimistic Locking (khóa trước) khi tỷ lệ va chạm thấp.
 
 ---
 
-### Challenge 2: Private URL Prevention
+### Thách thức 2: Ngăn chặn URL Riêng tư
 
-**Problem**: User could shorten `http://localhost:9090/admin` and share it
+**Vấn đề**: Người dùng có thể rút gọn `http://localhost:9090/admin` và chia sẻ nó
 
-**Solution**: Blacklist common private patterns
+**Giải pháp**: Danh sách đen các mẫu riêng tư phổ biến
 ```go
 if strings.Contains(host, "localhost") ||
    strings.HasPrefix(host, "127.") ||
    strings.HasPrefix(host, "192.168.") { ... }
 ```
 
-**Limitation**: Doesn't catch all private ranges (e.g., `172.16-31.x.x`)
+**Hạn chế**: Không bắt được tất cả các dải riêng tư (ví dụ: `172.16-31.x.x`)
 
-**Future**: Use CIDR matching library for comprehensive check
+**Tương lai**: Sử dụng thư viện khớp CIDR để kiểm tra toàn diện
+
+**Bài học**: Đừng bao giờ tin tưởng đầu vào từ người dùng (Zero Trust). Validation cần được thực hiện ở nhiều lớp (Application layer + Network layer).
 
 ---
 
-### Challenge 3: Click Counter Race Conditions
+### Thách thức 3: Race Conditions Bộ đếm Click
 
-**Problem**: Multiple clicks → lost updates
+**Vấn đề**: Nhiều click → mất cập nhật
 
-**Bad Approach** (race condition):
+**Cách tiếp cận Tồi** (race condition):
 ```go
 url := repo.FindByAlias(alias)
 url.ClickCount++
-repo.Update(url)  // Lost update!
+repo.Update(url)  // Mất cập nhật!
 ```
 
-**Good Approach** (atomic):
+**Cách tiếp cận Tốt** (nguyên tử):
 ```sql
 UPDATE urls SET click_count = click_count + 1 WHERE alias = ?
 ```
 
-**Learning**: Always use atomic operations for counters
+**Bài học**: Luôn sử dụng các thao tác nguyên tử cho bộ đếm
+
+**Bài học**: Hiểu rõ cơ chế khóa và tính nguyên tử (Atomicity) của database là cực kỳ quan trọng để đảm bảo tính đúng đắn của dữ liệu trong môi trường đa luồng.
 
 ---
 
-### Challenge 4: Swagger Code Generation
+### Thách thức 4: Tạo Code Swagger
 
-**Problem**: Swagger docs out of sync with code
+**Vấn đề**: Tài liệu Swagger không đồng bộ với code
 
-**Solution**: Use `swag` annotations in code
+**Giải pháp**: Sử dụng chú thích `swag` trong code
 ```go
 // @Summary Create a shortened URL
 // @Param request body domain.ShortenRequest true "URL to shorten"
 func (h *URLHandler) ShortenURL(c *gin.Context) { ... }
 ```
 
-Then auto-generate:
+Sau đó tự động tạo:
 ```bash
 swag init -g cmd/api/main.go
 ```
 
-**Benefit**: Single source of truth (code)
+**Lợi ích**: Nguồn sự thật duy nhất (code)
+
+**Bài học**: **Documentation-as-Code** giúp tài liệu luôn sống và chính xác, tránh việc tài liệu bị "thiu" (outdated) so với thực tế triển khai.
 
 ---
 
-## 🧪 Testing
+## Hạn chế & Cải tiến Tương lai
 
-### Run All Tests
+### Hạn chế Hiện tại
 
-```bash
-go test -v ./...
-```
-
-### Run Tests with Coverage
-
-```bash
-go test -v -cover -coverprofile=coverage.out ./...
-go tool cover -html=coverage.out -o coverage.html
-```
-
-### Test Results
-
-```
-✅ Short Code Generation:
-   - Uniqueness test (1000 iterations): PASS
-   - Length validation: PASS
-   - Base62 character check: PASS
-
-✅ URL Validation:
-   - Valid HTTP/HTTPS: PASS
-   - Localhost blocking: PASS
-   - Private IP blocking (192.168, 10, 172.16): PASS
-   - URL length limit: PASS
-
-✅ Alias Validation:
-   - Alphanumeric + hyphen + underscore: PASS
-   - Special character rejection: PASS
-   - Length limit: PASS
-```
-
-### Manual Testing
-
-```bash
-# Create short URL
-curl -X POST http://localhost:8080/url/shorten \
-  -H "Content-Type: application/json" \
-  -d '{"url": "https://www.google.com"}'
-
-# Response: {"alias":"a1B2c3","short_url":"http://localhost:8080/a1B2c3", ...}
-
-# Test redirect
-curl -L http://localhost:8080/a1B2c3
-
-# Get URL info
-curl http://localhost:8080/url/links/a1B2c3
-
-# List all URLs
-curl http://localhost:8080/url/links
-```
-
----
-
-## 🚧 Limitations & Future Improvements
-
-### Current Limitations
-
-| Limitation | Impact | Priority |
+| Hạn chế | Tác động | Ưu tiên |
 |------------|--------|----------|
-| **No Rate Limiting** | Vulnerable to abuse | HIGH |
-| **No URL Expiration** | Database grows indefinitely | MEDIUM |
-| **No Analytics Dashboard** | Limited insights | LOW |
-| **No Custom Domains** | Only localhost:8080 | LOW |
-| **No URL Validation for Malicious Sites** | Phishing risk | MEDIUM |
+| **Không Giới hạn Tốc độ** | Dễ bị lạm dụng | CAO |
+| **Không Hết hạn URL** | Database tăng trưởng vô hạn | TRUNG BÌNH |
+| **Không Dashboard Phân tích** | Thông tin chi tiết hạn chế | THẤP |
+| **Không Tên miền Tùy chỉnh** | Chỉ localhost:8080 | THẤP |
+| **Không Xác thực URL Độc hại** | Rủi ro lừa đảo (phishing) | TRUNG BÌNH |
 
-### Future Improvements
+### Cải tiến Tương lai
 
-#### Phase 1: Security & Reliability
-- [ ] **Rate Limiting**: 100 requests/hour per IP
-- [ ] **API Keys**: Authentication for paid tiers
-- [ ] **URL Blacklist**: Block known malicious domains
-- [ ] **HTTPS Support**: TLS certificates via Let's Encrypt
+#### Giai đoạn 1: Bảo mật & Độ tin cậy
+- [ ] **Giới hạn Tốc độ**: 100 yêu cầu/giờ mỗi IP
+- [ ] **API Keys**: Xác thực cho các gói trả phí
+- [ ] **Danh sách đen URL**: Chặn các tên miền độc hại đã biết
+- [ ] **Hỗ trợ HTTPS**: Chứng chỉ TLS qua Let's Encrypt
 
-#### Phase 2: Features
-- [ ] **QR Code Generation**: Auto-generate QR codes for short URLs
-- [ ] **Expiration**: Auto-delete after N days/clicks
-- [ ] **Password Protection**: Secure short URLs with password
-- [ ] **Custom Domains**: Support `go.yourcompany.com`
+#### Giai đoạn 2: Tính năng
+- [ ] **Tạo Mã QR**: Tự động tạo mã QR cho các URL rút gọn
+- [ ] **Hết hạn**: Tự động xóa sau N ngày/click
+- [ ] **Bảo vệ Mật khẩu**: Bảo mật URL rút gọn bằng mật khẩu
+- [ ] **Tên miền Tùy chỉnh**: Hỗ trợ `go.yourcompany.com`
 
-#### Phase 3: Analytics
-- [ ] **Click Analytics**: Track user agent, referrer, geo-location
-- [ ] **Admin Dashboard**: Web UI for URL management
-- [ ] **Real-time Stats**: WebSocket for live click updates
+#### Giai đoạn 3: Phân tích
+- [ ] **Phân tích Click**: Theo dõi user agent, người giới thiệu (referrer), vị trí địa lý
+- [ ] **Admin Dashboard**: Giao diện Web để quản lý URL
+- [ ] **Thống kê Thời gian thực**: WebSocket cho cập nhật click trực tiếp
 
-#### Phase 4: Scale
-- [ ] **Redis Caching**: Cache hot URLs (80/20 rule)
-- [ ] **Read Replicas**: Scale PostgreSQL reads
-- [ ] **CDN Integration**: Cloudflare for global redirects
-- [ ] **Database Sharding**: Partition by hash(alias)
+#### Giai đoạn 4: Quy mô
+- [ ] **Redis Caching**: Cache các URL hot (quy tắc 80/20)
+- [ ] **Read Replicas**: Mở rộng đọc PostgreSQL
+- [ ] **Tích hợp CDN**: Cloudflare cho chuyển hướng toàn cầu
+- [ ] **Database Sharding**: Phân vùng theo hash(alias)
 
 ---
 
-## 🏭 Production Readiness
+## Sẵn sàng cho Production
 
-### What's Missing for Production?
+### Còn thiếu gì cho Production?
 
-| Requirement | Status | Solution |
+| Yêu cầu | Trạng thái | Giải pháp |
 |-------------|--------|----------|
-| **SSL/TLS** | ❌ Not implemented | Use Nginx reverse proxy + Let's Encrypt |
-| **Monitoring** | ❌ Not implemented | Add Prometheus + Grafana |
-| **Logging** | ⚠️ Basic only | Integrate Logrus/Zap with structured logging |
-| **Error Tracking** | ❌ Not implemented | Sentry or Rollbar integration |
-| **CI/CD** | ❌ Not implemented | GitHub Actions for test + deploy |
-| **Load Balancer** | ❌ Not implemented | Nginx or AWS ALB |
-| **Database Backups** | ⚠️ Manual | Automated daily backups to S3 |
-| **Health Checks** | ✅ Implemented | `/health` endpoint |
+| **SSL/TLS** | ❌ Chưa triển khai | Sử dụng Nginx reverse proxy + Let's Encrypt |
+| **Giám sát** | ❌ Chưa triển khai | Thêm Prometheus + Grafana |
+| **Logging** | ⚠️ Chỉ cơ bản | Tích hợp Logrus/Zap với structured logging |
+| **Theo dõi Lỗi** | ❌ Chưa triển khai | Tích hợp Sentry hoặc Rollbar |
+| **CI/CD** | ❌ Chưa triển khai | GitHub Actions để test + deploy |
+| **Load Balancer** | ❌ Chưa triển khai | Nginx hoặc AWS ALB |
+| **Sao lưu Database** | ⚠️ Thủ công | Sao lưu hàng ngày tự động lên S3 |
+| **Health Checks** | ✅ Đã triển khai | Endpoint `/health` |
 
-### Deployment Architecture (Proposed)
+### Kiến trúc Triển khai (Đề xuất)
 
 ```
 Internet
    ↓
-Cloudflare CDN (DDoS protection, caching)
+Cloudflare CDN (Bảo vệ DDoS, caching)
    ↓
-Nginx Load Balancer (SSL termination, rate limiting)
+Nginx Load Balancer (SSL termination, giới hạn tốc độ)
    ↓
-Go Service (3 replicas, Docker containers)
+Go Service (3 bản sao)
    ↓
 PostgreSQL Primary + 2 Read Replicas
    ↓
-Redis Cache (hot URL cache)
+Redis Cache (cache URL hot)
 ```
 
-### Estimated Capacity
-
-**Current Setup (Single Instance):**
-- **RPS**: ~5,000 requests/second
-- **URLs**: 56 billion (limited by 6-char base62 space)
-- **Database**: 100M URLs ≈ 20 GB storage
-
-**With Scaling (Horizontal + Caching):**
-- **RPS**: 50,000+ requests/second
-- **Cost**: ~$500/month (AWS t3.medium x3 + RDS + ElastiCache)
-
----
-
-## 🛠️ Development Commands
-
-### Makefile Commands
-
-```bash
-make help              # Show all available commands
-make build             # Build binary to bin/urlshortener
-make run               # Run the service locally
-make test              # Run all tests
-make test-coverage     # Generate coverage report
-make swagger           # Regenerate Swagger docs
-make docker-up         # Start Docker containers
-make docker-down       # Stop Docker containers
-make migrate-up        # Run database migrations
-make migrate-down      # Rollback migrations
-make clean             # Remove build artifacts
-```
-
----
-
-## 📊 Database Schema
+## Lược đồ Cơ sở dữ liệu
 
 ```sql
 CREATE TABLE urls (
@@ -758,39 +440,15 @@ CREATE UNIQUE INDEX idx_alias ON urls(alias);
 CREATE INDEX idx_created_at ON urls(created_at);
 ```
 
-**Index Strategy:**
-- `idx_alias`: Unique index for O(1) alias lookups
-- `idx_created_at`: For analytics queries (newest URLs first)
+**Chiến lược Chỉ mục:**
+- `idx_alias`: Chỉ mục duy nhất cho tra cứu alias O(1)
+- `idx_created_at`: Cho các truy vấn phân tích (URL mới nhất trước)
 
 ---
 
-## 🤝 Contributing
 
-This is an assignment project, but contributions are welcome for:
-- Bug fixes
-- Performance improvements
-- Documentation improvements
-
----
-
-## 📄 License
-
-MIT License - feel free to use for learning or commercial projects.
-
----
-
-## 🙏 Acknowledgments
-
-Built as a technical assignment showcasing:
-- Clean architecture in Go
-- RESTful API design
-- Database optimization
-- Concurrency handling
-- Production-ready thinking
-
-**Technologies Used:**
+**Công nghệ Sử dụng:**
 - Go 1.23
 - Gin Web Framework
 - PostgreSQL 16
-- Swagger/OpenAPI
-- Docker & Docker Compose
+- Swagger
