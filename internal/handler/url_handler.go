@@ -1,13 +1,14 @@
 package handler
 
 import (
-	"Url-Shortener-Service/internal/domain"
-	"Url-Shortener-Service/internal/repository"
-	"Url-Shortener-Service/internal/service"
-	"Url-Shortener-Service/internal/utils"
 	"errors"
 	"net/http"
 	"strconv"
+
+	"github.com/Faleeeee/URL_Shortener/internal/domain"
+	"github.com/Faleeeee/URL_Shortener/internal/repository"
+	"github.com/Faleeeee/URL_Shortener/internal/service"
+	"github.com/Faleeeee/URL_Shortener/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )

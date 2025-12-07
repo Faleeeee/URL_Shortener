@@ -1,13 +1,14 @@
 package server
 
 import (
-	"Url-Shortener-Service/internal/database"
-	"Url-Shortener-Service/internal/handler"
-	"Url-Shortener-Service/internal/middleware"
-	"Url-Shortener-Service/internal/repository"
-	"Url-Shortener-Service/internal/service"
-	"Url-Shortener-Service/internal/utils"
 	"time"
+
+	"github.com/Faleeeee/URL_Shortener/internal/database"
+	"github.com/Faleeeee/URL_Shortener/internal/handler"
+	"github.com/Faleeeee/URL_Shortener/internal/middleware"
+	"github.com/Faleeeee/URL_Shortener/internal/repository"
+	"github.com/Faleeeee/URL_Shortener/internal/service"
+	"github.com/Faleeeee/URL_Shortener/internal/utils"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"

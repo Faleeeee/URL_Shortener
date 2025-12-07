@@ -1,10 +1,11 @@
 package repository
 
 import (
-	"Url-Shortener-Service/internal/database"
-	"Url-Shortener-Service/internal/domain"
 	"database/sql"
 	"errors"
+
+	"github.com/Faleeeee/URL_Shortener/internal/database"
+	"github.com/Faleeeee/URL_Shortener/internal/domain"
 )
 
 var (

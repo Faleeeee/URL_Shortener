@@ -1,0 +1,394 @@
+basePath: /
+definitions:
+  domain.APIResponse:
+    properties:
+      data: {}
+      error:
+        $ref: '#/definitions/domain.ErrorDetails'
+      message:
+        type: string
+      meta:
+        $ref: '#/definitions/domain.Meta'
+      success:
+        type: boolean
+    type: object
+  domain.AuthResponse:
+    properties:
+      token:
+        type: string
+      user_id:
+        type: integer
+      username:
+        type: string
+    type: object
+  domain.ErrorDetails:
+    properties:
+      code:
+        type: string
+      details:
+        type: string
+    type: object
+  domain.LoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  domain.Meta:
+    properties:
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
+    type: object
+  domain.RegisterRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  domain.ShortenRequest:
+    properties:
+      alias:
+        type: string
+      url:
+        type: string
+    required:
+    - url
+    type: object
+  domain.ShortenResponse:
+    properties:
+      alias:
+        type: string
+      original_url:
+        type: string
+      short_url:
+        type: string
+    type: object
+  domain.URL:
+    properties:
+      alias:
+        type: string
+      click_count:
+        type: integer
+      created_at:
+        type: string
+      id:
+        type: integer
+      original_url:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  domain.URLInfoResponse:
+    properties:
+      alias:
+        type: string
+      click_count:
+        type: integer
+      created_at:
+        type: string
+      original_url:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: integer
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: This is a URL shortener service with user authentication
+  title: URL Shortener Service API
+  version: "1.0"
+paths:
+  /{alias}:
+    get:
+      description: Redirect to the original URL using the short alias
+      parameters:
+      - description: Short URL alias
+        in: path
+        name: alias
+        required: true
+        type: string
+      responses:
+        "302":
+          description: Redirects to original URL
+        "404":
+          description: Short URL not found
+          schema:
+            $ref: '#/definitions/domain.APIResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/domain.APIResponse'
+      summary: Redirect to original URL
+      tags:
+      - URL Shortener
+  /admin/url:
+    get:
+      description: Get a paginated list of all shortened URLs in the system
+      parameters:
+      - default: 50
+        description: Number of results to return
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Number of results to skip
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of URLs with pagination metadata
+          schema:
+            allOf:
+            - $ref: '#/definitions/domain.APIResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/domain.URL'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/domain.APIResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/domain.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: List all shortened URLs (Admin only)
+      tags:
+      - Admin
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user with username and password
+      parameters:
+      - description: Login request with username and password
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully authenticated, returns JWT token
+          schema:
+            allOf:
+            - $ref: '#/definitions/domain.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.AuthResponse'
+              type: object
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/domain.APIResponse'
+        "401":
+          description: Invalid username or password
+          schema:
+            $ref: '#/definitions/domain.APIResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/domain.APIResponse'
+      summary: User login
+      tags:
+      - Authentication
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user account with username and password
+      parameters:
+      - description: Registration request with username and password
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Successfully registered, returns JWT token
+          schema:
+            allOf:
+            - $ref: '#/definitions/domain.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.AuthResponse'
+              type: object
+        "400":
+          description: Invalid request or validation error
+          schema:
+            $ref: '#/definitions/domain.APIResponse'
+        "409":
+          description: Username already exists
+          schema:
+            $ref: '#/definitions/domain.APIResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/domain.APIResponse'
+      summary: Register a new user
+      tags:
+      - Authentication
+  /url/links/{alias}:
+    get:
+      description: Get detailed information about a shortened URL including click
+        count (only owner can view)
+      parameters:
+      - description: Short URL alias
+        in: path
+        name: alias
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: URL information
+          schema:
+            allOf:
+            - $ref: '#/definitions/domain.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.URLInfoResponse'
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/domain.APIResponse'
+        "403":
+          description: Forbidden - not owner
+          schema:
+            $ref: '#/definitions/domain.APIResponse'
+        "404":
+          description: Short URL not found
+          schema:
+            $ref: '#/definitions/domain.APIResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/domain.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get URL information
+      tags:
+      - URL Shortener
+  /url/my-links:
+    get:
+      description: Get a paginated list of all URLs created by the authenticated user
+      parameters:
+      - default: 50
+        description: Number of results to return
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Number of results to skip
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of user's URLs with pagination metadata
+          schema:
+            allOf:
+            - $ref: '#/definitions/domain.APIResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/domain.URL'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/domain.APIResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/domain.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Get URLs created by authenticated user
+      tags:
+      - URL Shortener
+  /url/shorten:
+    post:
+      consumes:
+      - application/json
+      description: Create a short URL from a long URL with optional custom alias
+      parameters:
+      - description: URL to shorten and optional alias
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/domain.ShortenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully created short URL
+          schema:
+            allOf:
+            - $ref: '#/definitions/domain.APIResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/domain.ShortenResponse'
+              type: object
+        "400":
+          description: Invalid request or validation error
+          schema:
+            $ref: '#/definitions/domain.APIResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/domain.APIResponse'
+        "409":
+          description: Alias already exists
+          schema:
+            $ref: '#/definitions/domain.APIResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/domain.APIResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a shortened URL
+      tags:
+      - URL Shortener
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -1,11 +1,13 @@
 package server
 
 import (
-	"Url-Shortener-Service/internal/config"
-	"Url-Shortener-Service/internal/database"
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/Faleeeee/URL_Shortener/internal/database"
+
+	"github.com/Faleeeee/URL_Shortener/internal/config"
 )
 
 type Server struct {

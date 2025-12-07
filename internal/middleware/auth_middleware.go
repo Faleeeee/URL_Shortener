@@ -1,9 +1,10 @@
 package middleware
 
 import (
-	"Url-Shortener-Service/internal/utils"
 	"net/http"
 	"strings"
+
+	"github.com/Faleeeee/URL_Shortener/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )

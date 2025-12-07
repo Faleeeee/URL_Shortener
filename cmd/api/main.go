@@ -10,11 +10,12 @@
 package main
 
 import (
-	_ "Url-Shortener-Service/docs"
-	"Url-Shortener-Service/internal/config"
-	"Url-Shortener-Service/internal/database"
-	"Url-Shortener-Service/internal/server"
 	"log"
+
+	_ "github.com/Faleeeee/URL_Shortener/docs"
+	"github.com/Faleeeee/URL_Shortener/internal/config"
+	"github.com/Faleeeee/URL_Shortener/internal/database"
+	"github.com/Faleeeee/URL_Shortener/internal/server"
 )
 
 func main() {

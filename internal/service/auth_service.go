@@ -1,9 +1,9 @@
 package service
 
 import (
-	"Url-Shortener-Service/internal/domain"
-	"Url-Shortener-Service/internal/repository"
-	"Url-Shortener-Service/internal/utils"
+	"github.com/Faleeeee/URL_Shortener/internal/domain"
+	"github.com/Faleeeee/URL_Shortener/internal/repository"
+	"github.com/Faleeeee/URL_Shortener/internal/utils"
 
 	"golang.org/x/crypto/bcrypt"
 )

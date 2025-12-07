@@ -1,10 +1,11 @@
 package service
 
 import (
-	"Url-Shortener-Service/internal/domain"
-	"Url-Shortener-Service/internal/repository"
 	"errors"
 	"fmt"
+
+	"github.com/Faleeeee/URL_Shortener/internal/domain"
+	"github.com/Faleeeee/URL_Shortener/internal/repository"
 )
 
 const (

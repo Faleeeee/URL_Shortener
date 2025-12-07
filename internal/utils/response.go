@@ -3,7 +3,7 @@ package utils
 import (
 	"net/http"
 
-	"Url-Shortener-Service/internal/domain"
+	"github.com/Faleeeee/URL_Shortener/internal/domain"
 
 	"github.com/gin-gonic/gin"
 )
