@@ -29,7 +29,7 @@ WORKDIR /root/
 
 # Copy binary from builder
 COPY --from=builder /app/main .
-COPY --from=builder /app/configs ./configs
+
 
 # Expose port
 EXPOSE 8080
