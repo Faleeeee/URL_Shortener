@@ -401,12 +401,9 @@ swag init -g cmd/api/main.go
 |-------------|--------|----------|
 | **SSL/TLS** | ❌ Chưa triển khai | Sử dụng Nginx reverse proxy + Let's Encrypt |
 | **Giám sát** | ❌ Chưa triển khai | Thêm Prometheus + Grafana |
-| **Logging** | ⚠️ Chỉ cơ bản | Tích hợp Logrus/Zap với structured logging |
 | **Theo dõi Lỗi** | ❌ Chưa triển khai | Tích hợp Sentry hoặc Rollbar |
 | **CI/CD** | ❌ Chưa triển khai | GitHub Actions để test + deploy |
 | **Load Balancer** | ❌ Chưa triển khai | Nginx hoặc AWS ALB |
-| **Sao lưu Database** | ⚠️ Thủ công | Sao lưu hàng ngày tự động lên S3 |
-| **Health Checks** | ✅ Đã triển khai | Endpoint `/health` |
 
 ### Kiến trúc Triển khai (Đề xuất)
 
