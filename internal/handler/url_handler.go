@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/Faleeeee/URL_Shortener/internal/domain"
 	"github.com/Faleeeee/URL_Shortener/internal/repository"
@@ -22,7 +23,7 @@ type URLHandler struct {
 func NewURLHandler(service service.URLService, baseURL string) *URLHandler {
 	return &URLHandler{
 		service: service,
-		baseURL: baseURL,
+		baseURL: strings.TrimSuffix(baseURL, "/"),
 	}
 }
 
