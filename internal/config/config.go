@@ -2,8 +2,9 @@ package config
 
 import (
 	"log"
+	"os"
 
-	"github.com/spf13/viper"
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -20,18 +21,36 @@ type Config struct {
 }
 
 func LoadConfig() *Config {
-	viper.SetConfigName("dev")
-	// viper.SetConfigType("yaml")
-	viper.AddConfigPath("configs")
-
-	if err := viper.ReadInConfig(); err != nil {
-		log.Fatalf("Error loading config: %v", err)
+	// Load .env file
+	if err := godotenv.Load(); err != nil {
+		log.Println("Warning: .env file not found, using environment variables")
 	}
 
 	cfg := &Config{}
-	if err := viper.Unmarshal(cfg); err != nil {
-		log.Fatalf("Unable to decode config: %v", err)
+
+	// Load Server configuration
+	cfg.Server.Port = getEnv("SERVER_PORT", "8080")
+
+	// Load Database configuration
+	cfg.Database.URL = getEnv("DATABASE_URL", "")
+	if cfg.Database.URL == "" {
+		log.Fatal("DATABASE_URL is required")
 	}
 
+	// Load JWT configuration
+	cfg.JWT.Secret = getEnv("JWT_SECRET", "")
+	if cfg.JWT.Secret == "" {
+		log.Fatal("JWT_SECRET is required")
+	}
+	cfg.JWT.Expiration = getEnv("JWT_EXPIRATION", "24h")
+
 	return cfg
+}
+
+// getEnv reads an environment variable or returns a default value
+func getEnv(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
 }

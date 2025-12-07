@@ -4,6 +4,7 @@ import (
 	"Url-Shortener-Service/internal/domain"
 	"Url-Shortener-Service/internal/repository"
 	"Url-Shortener-Service/internal/service"
+	"Url-Shortener-Service/internal/utils"
 	"errors"
 	"net/http"
 	"strconv"
@@ -32,24 +33,24 @@ func NewURLHandler(service service.URLService, baseURL string) *URLHandler {
 // @Produce json
 // @Security BearerAuth
 // @Param request body domain.ShortenRequest true "URL to shorten and optional alias"
-// @Success 200 {object} domain.ShortenResponse "Successfully created short URL"
-// @Failure 400 {object} map[string]string "Invalid request or validation error"
-// @Failure 401 {object} map[string]string "Unauthorized"
-// @Failure 409 {object} map[string]string "Alias already exists"
-// @Failure 500 {object} map[string]string "Internal server error"
+// @Success 200 {object} domain.APIResponse{data=domain.ShortenResponse} "Successfully created short URL"
+// @Failure 400 {object} domain.APIResponse "Invalid request or validation error"
+// @Failure 401 {object} domain.APIResponse "Unauthorized"
+// @Failure 409 {object} domain.APIResponse "Alias already exists"
+// @Failure 500 {object} domain.APIResponse "Internal server error"
 // @Router /url/shorten [post]
 func (h *URLHandler) ShortenURL(c *gin.Context) {
 	var req domain.ShortenRequest
 
 	// Validate request body
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		utils.SendError(c, http.StatusBadRequest, "Invalid request body", "INVALID_REQUEST", err.Error())
 		return
 	}
 
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		utils.SendError(c, http.StatusUnauthorized, "User not authenticated", "UNAUTHORIZED", "Missing or invalid authentication token")
 		return
 	}
 
@@ -60,19 +61,19 @@ func (h *URLHandler) ShortenURL(c *gin.Context) {
 			errors.Is(err, domain.ErrInvalidAlias) ||
 			errors.Is(err, domain.ErrAliasTooLong) ||
 			errors.Is(err, domain.ErrPrivateURL) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			utils.SendError(c, http.StatusBadRequest, err.Error(), "VALIDATION_ERROR", err.Error())
 			return
 		}
 
 		// Duplicate alias error
 		if errors.Is(err, repository.ErrDuplicateAlias) ||
 			err.Error() == "alias '"+req.URL+"' is already taken" {
-			c.JSON(http.StatusConflict, gin.H{"error": "Alias already exists"})
+			utils.SendError(c, http.StatusConflict, "Alias already exists", "ALIAS_EXISTS", "The provided alias is already in use")
 			return
 		}
 
 		// Internal server error
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create short URL"})
+		utils.SendError(c, http.StatusInternalServerError, "Failed to create short URL", "INTERNAL_ERROR", "An unexpected error occurred")
 		return
 	}
 
@@ -83,7 +84,7 @@ func (h *URLHandler) ShortenURL(c *gin.Context) {
 		OriginalURL: url.OriginalURL,
 	}
 
-	c.JSON(http.StatusOK, response)
+	utils.SendSuccess(c, "Short URL created successfully", response, nil)
 }
 
 // RedirectURL godoc
@@ -92,8 +93,8 @@ func (h *URLHandler) ShortenURL(c *gin.Context) {
 // @Tags URL Shortener
 // @Param alias path string true "Short URL alias"
 // @Success 302 "Redirects to original URL"
-// @Failure 404 {object} map[string]string "Short URL not found"
-// @Failure 500 {object} map[string]string "Internal server error"
+// @Failure 404 {object} domain.APIResponse "Short URL not found"
+// @Failure 500 {object} domain.APIResponse "Internal server error"
 // @Router /{alias} [get]
 func (h *URLHandler) RedirectURL(c *gin.Context) {
 	alias := c.Param("alias")
@@ -102,10 +103,10 @@ func (h *URLHandler) RedirectURL(c *gin.Context) {
 	url, err := h.service.GetURLByAlias(alias)
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Short URL not found"})
+			utils.SendError(c, http.StatusNotFound, "Short URL not found", "URL_NOT_FOUND", "The requested alias does not exist")
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve URL"})
+		utils.SendError(c, http.StatusInternalServerError, "Failed to retrieve URL", "INTERNAL_ERROR", "An unexpected error occurred")
 		return
 	}
 
@@ -123,18 +124,18 @@ func (h *URLHandler) RedirectURL(c *gin.Context) {
 // @Produce json
 // @Security BearerAuth
 // @Param alias path string true "Short URL alias"
-// @Success 200 {object} domain.URLInfoResponse "URL information"
-// @Failure 401 {object} map[string]string "Unauthorized"
-// @Failure 403 {object} map[string]string "Forbidden - not owner"
-// @Failure 404 {object} map[string]string "Short URL not found"
-// @Failure 500 {object} map[string]string "Internal server error"
+// @Success 200 {object} domain.APIResponse{data=domain.URLInfoResponse} "URL information"
+// @Failure 401 {object} domain.APIResponse "Unauthorized"
+// @Failure 403 {object} domain.APIResponse "Forbidden - not owner"
+// @Failure 404 {object} domain.APIResponse "Short URL not found"
+// @Failure 500 {object} domain.APIResponse "Internal server error"
 // @Router /url/links/{alias} [get]
 func (h *URLHandler) GetURLInfo(c *gin.Context) {
 	alias := c.Param("alias")
 
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		utils.SendError(c, http.StatusUnauthorized, "User not authenticated", "UNAUTHORIZED", "Missing or invalid authentication token")
 		return
 	}
 
@@ -142,16 +143,16 @@ func (h *URLHandler) GetURLInfo(c *gin.Context) {
 	url, err := h.service.GetURLByAlias(alias)
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Short URL not found"})
+			utils.SendError(c, http.StatusNotFound, "Short URL not found", "URL_NOT_FOUND", "The requested alias does not exist")
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve URL"})
+		utils.SendError(c, http.StatusInternalServerError, "Failed to retrieve URL", "INTERNAL_ERROR", "An unexpected error occurred")
 		return
 	}
 
 	// Check if user is the owner of this URL
 	if url.UserID != userID.(int64) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "You don't have permission to view this URL"})
+		utils.SendError(c, http.StatusForbidden, "You don't have permission to view this URL", "FORBIDDEN", "You are not the owner of this URL")
 		return
 	}
 
@@ -165,7 +166,7 @@ func (h *URLHandler) GetURLInfo(c *gin.Context) {
 		UpdatedAt:   url.UpdatedAt,
 	}
 
-	c.JSON(http.StatusOK, response)
+	utils.SendSuccess(c, "URL information retrieved successfully", response, nil)
 }
 
 // ListURLs godoc
@@ -176,9 +177,9 @@ func (h *URLHandler) GetURLInfo(c *gin.Context) {
 // @Security BearerAuth
 // @Param limit query int false "Number of results to return" default(50)
 // @Param offset query int false "Number of results to skip" default(0)
-// @Success 200 {object} map[string]interface{} "List of URLs with pagination metadata"
-// @Failure 401 {object} map[string]string "Unauthorized"
-// @Failure 500 {object} map[string]string "Internal server error"
+// @Success 200 {object} domain.APIResponse{data=[]domain.URL} "List of URLs with pagination metadata"
+// @Failure 401 {object} domain.APIResponse "Unauthorized"
+// @Failure 500 {object} domain.APIResponse "Internal server error"
 // @Router /admin/url [get]
 func (h *URLHandler) ListURLs(c *gin.Context) {
 	// Parse pagination parameters
@@ -188,7 +189,7 @@ func (h *URLHandler) ListURLs(c *gin.Context) {
 	// Get URLs
 	urls, err := h.service.ListURLs(limit, offset)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve URLs"})
+		utils.SendError(c, http.StatusInternalServerError, "Failed to retrieve URLs", "INTERNAL_ERROR", "An unexpected error occurred")
 		return
 	}
 
@@ -198,12 +199,13 @@ func (h *URLHandler) ListURLs(c *gin.Context) {
 	}
 
 	// Build response with metadata
-	c.JSON(http.StatusOK, gin.H{
-		"urls":   urls,
-		"count":  len(urls),
-		"limit":  limit,
-		"offset": offset,
-	})
+	meta := &domain.Meta{
+		Page:  offset/limit + 1,
+		Limit: limit,
+		Total: int64(len(urls)), // Note: This is just the count of returned items, ideally we should have total count from DB
+	}
+
+	utils.SendSuccess(c, "URLs retrieved successfully", urls, meta)
 }
 
 // GetUserURLs godoc
@@ -214,14 +216,14 @@ func (h *URLHandler) ListURLs(c *gin.Context) {
 // @Security BearerAuth
 // @Param limit query int false "Number of results to return" default(50)
 // @Param offset query int false "Number of results to skip" default(0)
-// @Success 200 {object} map[string]interface{} "List of user's URLs with pagination metadata"
-// @Failure 401 {object} map[string]string "Unauthorized"
-// @Failure 500 {object} map[string]string "Internal server error"
+// @Success 200 {object} domain.APIResponse{data=[]domain.URL} "List of user's URLs with pagination metadata"
+// @Failure 401 {object} domain.APIResponse "Unauthorized"
+// @Failure 500 {object} domain.APIResponse "Internal server error"
 // @Router /url/my-links [get]
 func (h *URLHandler) GetUserURLs(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		utils.SendError(c, http.StatusUnauthorized, "User not authenticated", "UNAUTHORIZED", "Missing or invalid authentication token")
 		return
 	}
 
@@ -230,7 +232,7 @@ func (h *URLHandler) GetUserURLs(c *gin.Context) {
 
 	urls, err := h.service.GetURLsByUserID(userID.(int64), limit, offset)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve URLs"})
+		utils.SendError(c, http.StatusInternalServerError, "Failed to retrieve URLs", "INTERNAL_ERROR", "An unexpected error occurred")
 		return
 	}
 
@@ -238,10 +240,11 @@ func (h *URLHandler) GetUserURLs(c *gin.Context) {
 		urls = []*domain.URL{}
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"urls":   urls,
-		"count":  len(urls),
-		"limit":  limit,
-		"offset": offset,
-	})
+	meta := &domain.Meta{
+		Page:  offset/limit + 1,
+		Limit: limit,
+		Total: int64(len(urls)), // Note: This is just the count of returned items, ideally we should have total count from DB
+	}
+
+	utils.SendSuccess(c, "User URLs retrieved successfully", urls, meta)
 }

@@ -1,9 +1,0 @@
-server:
-  port: "8080"
-
-database:
-  url: "postgres://postgres:123456@localhost:5432/url_shortener?sslmode=disable"
-
-jwt:
-  secret: "your-super-secret-jwt-key-change-this-in-production"
-  expiration: "24h"

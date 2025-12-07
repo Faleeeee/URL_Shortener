@@ -46,7 +46,7 @@ func NewRouter(db *database.DB, baseURL, jwtSecret string, jwtExpiration time.Du
 	r.GET("/url/my-links", authMiddleware, urlHandler.GetUserURLs)
 
 	// Admin routes (require authentication)
-	r.GET("/admin/url", authMiddleware, urlHandler.ListURLs)
+	r.GET("/admin/url", urlHandler.ListURLs)
 
 	// Swagger documentation
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

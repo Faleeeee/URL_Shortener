@@ -83,7 +83,17 @@ git clone <your-repo-url>
 cd URL-Shortener-Service
 ```
 
-### 2. Start the Database
+### 2. Configure Environment Variables
+
+```bash
+# Copy the example environment file
+cp .env.example .env
+
+# Edit .env with your database credentials if needed
+# The default values work with the Docker Compose setup
+```
+
+### 3. Start the Database
 
 ```bash
 # Using Docker Compose
@@ -93,19 +103,19 @@ sudo docker compose up -d
 sleep 5
 ```
 
-### 3. Run Database Migrations
+### 4. Run Database Migrations
 
 ```bash
 sudo docker exec url_shortener_db psql -U postgres -d url_shortener -f /migrations/000001_create_urls_table.up.sql
 ```
 
-### 4. Install Dependencies
+### 5. Install Dependencies
 
 ```bash
 go mod download
 ```
 
-### 5. Run the Service
+### 6. Run the Service
 
 ```bash
 go run cmd/api/main.go
@@ -113,12 +123,52 @@ go run cmd/api/main.go
 
 The service will start on `http://localhost:8080`
 
-### 6. Access Swagger Documentation
+### 7. Access Swagger Documentation
 
 Open your browser to:
 ```
 http://localhost:8080/swagger/index.html
 ```
+
+---
+
+## ⚙️ Configuration
+
+The service uses environment variables for configuration. All settings are defined in the `.env` file.
+
+### Environment Variables
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `SERVER_PORT` | Port the server listens on | `8080` | No |
+| `DATABASE_URL` | PostgreSQL connection string | - | Yes |
+| `JWT_SECRET` | Secret key for JWT token signing | - | Yes |
+| `JWT_EXPIRATION` | JWT token expiration duration | `24h` | No |
+
+### Example `.env` File
+
+```bash
+# Server Configuration
+SERVER_PORT=8080
+
+# Database Configuration
+DATABASE_URL=postgres://postgres:123456@localhost:5432/url_shortener?sslmode=disable
+
+# JWT Configuration
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+JWT_EXPIRATION=24h
+```
+
+### Configuration Loading
+
+The service loads configuration in the following order:
+1. Reads from `.env` file in the project root
+2. Falls back to system environment variables if `.env` not found
+3. Uses default values for optional settings
+4. Fails with clear error message if required variables are missing
+
+> [!IMPORTANT]
+> **Production Security**: Always use strong, randomly generated values for `JWT_SECRET` in production environments.
 
 ---
 
@@ -365,10 +415,11 @@ UPDATE urls SET click_count = click_count + 1 WHERE alias = ?
 │   ├── handler/         # HTTP handlers (API)
 │   ├── server/          # Server & routing
 │   ├── database/        # Database connection
-│   └── config/          # Configuration
+│   └── config/          # Configuration loading from env
 ├── migrations/          # SQL migrations
 ├── docs/               # Swagger documentation
-└── configs/            # YAML configuration files
+├── .env.example        # Environment variables template
+└── .env                # Environment variables (gitignored)
 ```
 
 **Benefits:**

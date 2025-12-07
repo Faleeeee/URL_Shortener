@@ -14,7 +14,7 @@ func AuthMiddleware(jwtManager *utils.JWTManager) gin.HandlerFunc {
 		// Get Authorization header
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
+			utils.SendError(c, http.StatusUnauthorized, "Authorization header required", "AUTH_REQUIRED", "Missing Authorization header")
 			c.Abort()
 			return
 		}
@@ -32,7 +32,7 @@ func AuthMiddleware(jwtManager *utils.JWTManager) gin.HandlerFunc {
 
 		// Validate token is not empty after extraction
 		if token == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Token is empty"})
+			utils.SendError(c, http.StatusUnauthorized, "Token is empty", "INVALID_TOKEN", "Authorization token is empty")
 			c.Abort()
 			return
 		}
@@ -41,9 +41,9 @@ func AuthMiddleware(jwtManager *utils.JWTManager) gin.HandlerFunc {
 		claims, err := jwtManager.ValidateToken(token)
 		if err != nil {
 			if err == utils.ErrExpiredToken {
-				c.JSON(http.StatusUnauthorized, gin.H{"error": "Token has expired"})
+				utils.SendError(c, http.StatusUnauthorized, "Token has expired", "TOKEN_EXPIRED", "The provided token has expired")
 			} else {
-				c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+				utils.SendError(c, http.StatusUnauthorized, "Invalid token", "INVALID_TOKEN", "The provided token is invalid")
 			}
 			c.Abort()
 			return
