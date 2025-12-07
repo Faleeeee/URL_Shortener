@@ -1,7 +1,8 @@
 // @title URL Shortener Service API
 // @version 1.0
 // @description This is a URL shortener service with user authentication
-// @host localhost:8080
+// @host url-shortener-service-u0l4.onrender.com
+// @schemes https
 // @BasePath /
 // @securityDefinitions.apikey BearerAuth
 // @in header

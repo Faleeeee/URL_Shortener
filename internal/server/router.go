@@ -15,7 +15,7 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-func NewRouter(db *database.DB, baseURL, jwtSecret string, jwtExpiration time.Duration) *gin.Engine {
+func NewRouter(db *database.DB, baseURL, jwtSecret string, jwtExpiration time.Duration, base62Chars string) *gin.Engine {
 	r := gin.Default()
 
 	// Initialize JWT Manager
@@ -26,7 +26,7 @@ func NewRouter(db *database.DB, baseURL, jwtSecret string, jwtExpiration time.Du
 
 	// Initialize URL layers
 	urlRepo := repository.NewURLRepository(db)
-	urlService := service.NewURLService(urlRepo, baseURL)
+	urlService := service.NewURLService(urlRepo, baseURL, base62Chars)
 	urlHandler := handler.NewURLHandler(urlService, baseURL)
 
 	// Initialize Auth layers

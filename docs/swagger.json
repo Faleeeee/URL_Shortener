@@ -1,4 +1,7 @@
 {
+    "schemes": [
+        "https"
+    ],
     "swagger": "2.0",
     "info": {
         "description": "This is a URL shortener service with user authentication",
@@ -6,7 +9,7 @@
         "contact": {},
         "version": "1.0"
     },
-    "host": "localhost:8080",
+    "host": "url-shortener-service-u0l4.onrender.com",
     "basePath": "/",
     "paths": {
         "/admin/url": {

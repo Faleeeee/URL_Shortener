@@ -9,7 +9,8 @@ import (
 
 type Config struct {
 	Server struct {
-		Port string
+		Port    string
+		BaseURL string
 	}
 	Database struct {
 		URL string
@@ -17,6 +18,9 @@ type Config struct {
 	JWT struct {
 		Secret     string
 		Expiration string
+	}
+	Shortener struct {
+		Base62Chars string
 	}
 }
 
@@ -30,6 +34,7 @@ func LoadConfig() *Config {
 
 	// Load Server configuration
 	cfg.Server.Port = getEnv("SERVER_PORT", "8080")
+	cfg.Server.BaseURL = getEnv("BASE_URL", "http://localhost:"+cfg.Server.Port)
 
 	// Load Database configuration
 	cfg.Database.URL = getEnv("DATABASE_URL", "")
@@ -43,6 +48,9 @@ func LoadConfig() *Config {
 		log.Fatal("JWT_SECRET is required")
 	}
 	cfg.JWT.Expiration = getEnv("JWT_EXPIRATION", "24h")
+
+	// Load Shortener configuration
+	cfg.Shortener.Base62Chars = getEnv("BASE62_CHARS", "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz")
 
 	return cfg
 }

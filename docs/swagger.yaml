@@ -107,7 +107,7 @@ definitions:
       user_id:
         type: integer
     type: object
-host: localhost:8080
+host: url-shortener-service-u0l4.onrender.com
 info:
   contact: {}
   description: This is a URL shortener service with user authentication
@@ -385,6 +385,8 @@ paths:
       summary: Create a shortened URL
       tags:
       - URL Shortener
+schemes:
+- https
 securityDefinitions:
   BearerAuth:
     description: Type "Bearer" followed by a space and JWT token.

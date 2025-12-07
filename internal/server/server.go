@@ -23,7 +23,7 @@ func NewServer(cfg *config.Config, db *database.DB) *Server {
 }
 
 func (s *Server) Run() {
-	baseURL := "http://localhost:" + s.cfg.Server.Port
+	baseURL := s.cfg.Server.BaseURL
 
 	jwtExpiration, err := time.ParseDuration(s.cfg.JWT.Expiration)
 	if err != nil {
@@ -31,7 +31,7 @@ func (s *Server) Run() {
 		jwtExpiration = 24 * time.Hour
 	}
 
-	r := NewRouter(s.db, baseURL, s.cfg.JWT.Secret, jwtExpiration)
+	r := NewRouter(s.db, baseURL, s.cfg.JWT.Secret, jwtExpiration, s.cfg.Shortener.Base62Chars)
 
 	log.Printf("Server running on %s", baseURL)
 	log.Printf("Swagger docs: %s/swagger/index.html", baseURL)

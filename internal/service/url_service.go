@@ -26,15 +26,17 @@ type URLService interface {
 }
 
 type urlService struct {
-	repo    repository.URLRepository
-	baseURL string
+	repo        repository.URLRepository
+	baseURL     string
+	base62Chars string
 }
 
 // NewURLService creates a new URL service
-func NewURLService(repo repository.URLRepository, baseURL string) URLService {
+func NewURLService(repo repository.URLRepository, baseURL, base62Chars string) URLService {
 	return &urlService{
-		repo:    repo,
-		baseURL: baseURL,
+		repo:        repo,
+		baseURL:     baseURL,
+		base62Chars: base62Chars,
 	}
 }
 
@@ -63,7 +65,7 @@ func (s *urlService) ShortenURL(originalURL string, alias string, userID int64) 
 	// Generate random alias with collision retry
 	var lastErr error
 	for i := 0; i < MaxRetries; i++ {
-		generatedAlias, err := GenerateShortCode(DefaultCodeLength)
+		generatedAlias, err := GenerateShortCode(DefaultCodeLength, s.base62Chars)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate short code: %w", err)
 		}
